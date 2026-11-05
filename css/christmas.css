@@ -1,0 +1,146 @@
+/* WEIHNACHTSKASSE / eigenständige Sonderedition: Menü, Artikel und Einstellungen */
+.topbar{background:linear-gradient(105deg,#7f1025,#ba1427 64%,#145e3b)!important;border-bottom:3px solid #d6b76b;position:relative}
+.topbar .versionBadge{background:#ffedc43b!important;color:#fff}
+.topbar .ghost{border-color:#ffe6b1a8!important;background:#720d224d!important}
+.topbar strong{white-space:nowrap}
+body:not(.contrastMode){background:#fff6f3!important}
+#app{background:#fff6f3!important}
+#app .christmasShop{grid-template-columns:minmax(0,1fr) minmax(280px,320px)!important}
+#app .productPanel{background:linear-gradient(175deg,#fff 0%,#fffafa 100%);border:2px solid #eddbca}
+#app .cartPanel{background:#fffefa;border-color:#e9dbc8}
+#app .productHeader h1{color:#9f0a25!important}
+.christmasSubtitle{margin:.25rem 0 0;font-size:.9rem;font-weight:700;color:#557e65}
+#app .productGrid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;align-content:start}
+#app .productTile{min-height:190px;padding:12px;display:flex;flex-direction:column;gap:8px;justify-content:flex-start}
+#app .productTile .productName{font-size:1.1rem;min-height:2.3em;display:grid;place-items:center}
+.productPhoto{height:104px;width:100%;display:grid;place-items:center}
+.productPhoto img{width:100%!important;height:104px!important;max-width:150px;object-fit:contain;border-radius:12px}
+.productPlaceholder{width:95px;height:95px;display:grid;place-items:center;font-size:4rem;background:linear-gradient(150deg,#fff1eb,#f4f9ed);border-radius:18px}
+.baseBuy{min-height:48px;width:100%;border:0;border-radius:12px;background:#0d6a3b;color:#fff;font-size:1.05rem;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:space-around}
+.baseBuy span{font-size:1.5rem}
+.sizeChoices{display:grid;grid-template-columns:1fr;gap:5px;width:100%}
+.sizeBuy{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:5px;border:2px solid transparent;border-radius:10px;font-weight:900;padding:7px 8px;color:#183024;cursor:pointer}
+.size-klein{background:#bde9cf!important;border-color:#65ae82!important;color:#15452a!important}
+.size-mittel{background:#ffe3a2!important;border-color:#d4a046!important;color:#633c0b!important}
+.size-gross{background:#f5bec5!important;border-color:#dc7383!important;color:#70212d!important}
+.sizeBuy strong{font-size:.9rem}
+#app .totalBox{background:#f8ece4;border-color:#b21c34}
+#app .checkoutFooter .primary{background:#0d6a3b}
+#app .clearCartIcon{background:#fff4f0}
+#teacherDialog{max-height:min(92vh,980px);overflow:auto}
+#teacherDialog h2{color:#9d1027;margin-top:0}
+.teacherSection{background:#fffaf4;border:2px solid #e6dbc8;border-radius:18px;padding:14px;margin:16px 0}
+.teacherSection h3{margin:0 0 5px;color:#8b182a}
+.teacherSection .hint{margin:5px 0 12px;font-size:.9rem}
+.teacherSectionHeading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.addArticleButton{background:#0d6a3b;padding:10px 14px}
+.sizeSettings{display:flex;flex-wrap:wrap;gap:10px}
+.sizeToggle{display:flex;align-items:center;gap:6px;padding:12px 16px;border-radius:12px;font-weight:800;border:2px solid}
+.sizeToggle input{width:22px;height:22px;accent-color:#145b39}
+.articleEditors{display:grid;gap:14px}
+.articleEditor{display:grid;grid-template-columns:140px minmax(0,1fr);gap:14px;background:#fff;border:1px solid #e5d9cb;border-radius:18px;padding:14px}
+.editorPhoto{width:128px;height:128px;display:grid;place-items:center;background:#faf7f3;border-radius:15px;overflow:hidden}
+.editorPhoto img{width:100%;height:100%;object-fit:contain}
+.editorPhoto .productPlaceholder{width:96px;height:96px}
+.editorFields{display:grid;gap:8px}
+.editorFields>label{font-weight:700;display:flex;flex-direction:column;gap:4px}
+.editorFields input:not([type=file]){width:100%;min-width:0;padding:9px 10px;border:2px solid #c9d7c9;border-radius:10px;font:inherit}
+.editorSizePrices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.editorSizePrices label{font-size:.85rem;border-radius:10px;padding:7px;font-weight:800}
+.editorSizePrices input:disabled{opacity:.45}
+.imageUploadLabel{display:inline-flex!important;width:fit-content;max-width:100%;background:#f1f7ed;border:1px solid #a4c8ab;border-radius:12px;padding:10px 12px;cursor:pointer}
+.imageUploadLabel input{max-width:100%;font-size:.82rem}
+.editorActions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.editorActions button{padding:8px 10px;font-size:.86rem;border-radius:12px}
+.teacherBottomActions{margin-top:16px}
+#teacherDialog .dialogActions{position:sticky;bottom:-24px;background:#fff;padding:12px 0 0;border-top:1px solid #ead6c9}
+/* Zahlungsbildschirm behält exakt dieselben Elemente und Geldbilder; kein vertikales Scrollen. */
+body.isPay,body.isPay #app{overflow:hidden!important}
+body.isPay .payScreen{height:max-content!important;min-height:0!important;overflow:visible!important;max-width:1380px}
+body.isPay .moneyArea{overflow:visible!important;align-items:start!important}
+body.isPay .payFooter{overflow:visible!important}
+body.isPay .paidChips{overflow:hidden!important;min-width:0}
+@media(max-width:1100px){
+ #app .christmasShop{grid-template-columns:minmax(0,1fr) 270px!important}
+ #app .productGrid{grid-template-columns:repeat(auto-fill,minmax(125px,1fr))}
+ #app .productTile{min-height:170px}
+}
+@media(max-width:700px){
+ .topbar{min-height:70px!important;height:auto!important;padding:7px 9px!important}
+ .topbar strong{font-size:1rem;white-space:normal;margin-right:0}
+ .topbar .topActions{gap:5px}
+ .topbar #customerBadge{padding:4px 8px;font-size:.7rem}
+ .topbar .ghost{padding:6px 8px!important}
+ #app .christmasShop{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) auto;height:100%}
+ #app .productPanel{min-height:0;overflow:hidden}
+ #app .productGrid{overflow:auto;grid-template-columns:repeat(2,minmax(0,1fr))}
+ #app .cartPanel{min-height:0;max-height:35vh}
+ #app .cartItems{max-height:17vh}
+ .articleEditor{grid-template-columns:1fr}
+ .editorPhoto{margin:auto}
+ .editorSizePrices{grid-template-columns:repeat(3,minmax(0,1fr))}
+ /* Einspaltige Geldabschnitte, mit unveränderter Reihenfolge und Symbolik. */
+ body.isPay .paySummary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ body.isPay .moneyArea{grid-template-columns:minmax(0,1fr)!important}
+ body.isPay .moneyGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:2px!important}
+ body.isPay .moneyGrid .moneyBtn{min-width:0!important;min-height:76px!important}
+ body.isPay .moneyGrid .moneyBtn img{height:68px!important;max-width:100%!important}
+ body.isPay .coinGrid .moneyBtn{min-height:75px!important}
+ body.isPay .coinGrid .moneyBtn img{height:68px!important}
+ body.isPay .payFooter{grid-template-columns:minmax(0,1fr) auto!important;min-height:80px!important}
+ body.isPay .payFooter .paidChips{min-height:72px!important;max-height:86px!important}
+ body.isPay .payActions{grid-template-columns:repeat(2,minmax(65px,1fr))!important;min-width:132px!important}
+ body.isPay .payActions .iconAction{min-width:0!important;min-height:72px!important}
+ body.isPay .bigAmount{min-height:74px!important;padding:4px 38px 4px 5px!important}
+ body.isPay .bigAmount strong{font-size:clamp(1.4rem,6vw,2.2rem)!important}
+ body.isPay .bigAmount span{font-size:.65rem!important}
+}
+@media(max-width:380px){
+ body.isPay .payActions{grid-template-columns:1fr!important;min-width:94px!important}
+ body.isPay .payActions .iconAction{min-height:44px!important}
+ body.isPay .payActions .iconAction .icon{font-size:1.35rem!important}
+ body.isPay .payActions .iconAction .smallLabel{font-size:.58rem!important}
+}
+
+/* Bezahlseite: stabile Größen auch bei spät nachgeladenen Geldbildern. */
+body.isPay .payScreen{grid-template-rows:auto auto auto!important;max-width:min(1380px,100%)!important}
+body.isPay .moneyArea{grid-template-columns:repeat(2,minmax(0,1fr))!important;min-width:0!important;height:max-content!important}
+body.isPay .moneyGroup{min-width:0!important;height:max-content!important}
+body.isPay .moneyGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;min-width:0!important}
+body.isPay .coinGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+body.isPay .moneyBtn{width:100%!important;min-width:0!important}
+@media(max-width:700px){
+ body.isPay .moneyArea{grid-template-columns:minmax(0,1fr)!important}
+ body.isPay .moneyGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+
+/* Artikelknöpfe haben Vorrang vor den Kachelregeln der hochgeladenen PWA. */
+#app button.baseBuy[data-product]{background:#0d6a3b!important;color:white!important;border:0!important;box-shadow:0 2px 8px #224c2d32!important}
+#app button.sizeBuy[data-product]{color:#183024!important;border-width:2px!important}
+#app button.sizeBuy.size-klein[data-product]{background:#bde9cf!important;border-color:#65ae82!important;color:#15452a!important}
+#app button.sizeBuy.size-mittel[data-product]{background:#ffe3a2!important;border-color:#d4a046!important;color:#633c0b!important}
+#app button.sizeBuy.size-gross[data-product]{background:#f5bec5!important;border-color:#dc7383!important;color:#70212d!important}
+
+@media(max-width:700px){
+ .topbar{height:auto!important;min-height:100px!important;flex-direction:column!important;align-items:stretch!important;justify-content:center!important;gap:4px!important;padding:6px 9px!important}
+ .topbar>div:first-child{width:100%;flex-wrap:nowrap!important;justify-content:space-between;gap:5px}
+ .topbar strong{font-size:1rem!important;line-height:1.1}
+ .topbar .versionBadge{font-size:.6rem!important;padding:3px 5px}
+ .topbar .topActions{width:100%;flex-wrap:nowrap!important;justify-content:space-between!important;gap:5px}
+ .topbar .topActions .ghost{flex:1 1 0;min-width:0;min-height:40px!important;height:40px;padding:3px!important;font-size:1.15rem!important}
+ .topbar .topActions .practiceTop{flex:2 1 0;font-size:.8rem!important;min-height:40px!important}
+}
+
+/* Tablet/Telefon: Der Menübereich darf nie aus dem Viewport hinausragen. */
+@media(max-width:900px){
+ .topbar{height:auto!important;min-height:100px!important;flex-direction:column!important;align-items:stretch!important;justify-content:center!important;gap:4px!important;padding:6px 9px!important}
+ .topbar>div:first-child{width:100%;flex-wrap:nowrap!important;justify-content:space-between;gap:5px}
+ .topbar strong{font-size:clamp(1rem,2.7vw,1.25rem)!important;line-height:1.1}
+ .topbar .versionBadge{font-size:.66rem!important;padding:3px 5px}
+ .topbar .topActions{width:100%;flex-wrap:nowrap!important;justify-content:space-between!important;gap:5px}
+ .topbar .topActions .ghost{flex:1 1 0;min-width:0;min-height:40px!important;height:40px;padding:3px!important;font-size:1.15rem!important}
+ .topbar .topActions .practiceTop{flex:2 1 0;font-size:.85rem!important;min-height:40px!important}
+}
+/* Höhe richtet sich an tatsächlich verfügbarem Platz aus, nicht an historischen 76px-Menüregeln. */
+body.isPay #app{height:auto!important;min-height:0!important;flex:1 1 0!important;overflow:hidden!important}
+#app .productTile{cursor:pointer}
