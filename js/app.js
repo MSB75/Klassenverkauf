@@ -7,10 +7,10 @@ const settingsKey = 'weihnachtskasse-settings-v1';
 const productsKey = 'weihnachtskasse-products-v1';
 const sizeNames = {klein:'Klein',mittel:'Mittel',gross:'Groß'};
 const defaultProducts = [
-  {id:'artikel-1',name:'Artikel 1',price:100,sizes:{klein:100,mittel:150,gross:200}},
-  {id:'artikel-2',name:'Artikel 2',price:200,sizes:{klein:200,mittel:250,gross:300}}
+  {id:'artikel-1',name:'Artikel 1',price:100,sizes:{klein:100,mittel:150,gross:200},enabledSizes:{klein:false,mittel:false,gross:false}},
+  {id:'artikel-2',name:'Artikel 2',price:200,sizes:{klein:200,mittel:250,gross:300},enabledSizes:{klein:false,mittel:false,gross:false}}
 ];
-let products = defaultProducts.map(p=>({...p,sizes:{...p.sizes}}));
+let products = defaultProducts.map(p=>({...p,sizes:{...p.sizes},enabledSizes:{...p.enabledSizes}}));
 let settings = {speech:true,difficulty:'normal',highContrast:false,priceMode:'original',sizes:{klein:false,mittel:false,gross:false}};
 let state = {screen:'shop',cart:[],paid:[],change:[],customer:1,sales:[],practice:false,practiceTask:null};
 const pictureUrls = new Map();
@@ -23,6 +23,8 @@ const moneyLabel = cents => cents>=100 ? `${cents/100} Euro` : `${cents} Cent`;
 const moneyFile = cents => cents>=100 ? `${cents/100}-euro.png` : `${cents}-cent.png`;
 const esc = value => String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const productById = id => products.find(p=>p.id===id);
+// Jede Größenwahl gehört ausschließlich zu ihrem Artikel.
+const activeSizes = product => Object.keys(sizeNames).filter(size=>!!product.enabledSizes?.[size]);
 const moneyFromInput = input => {
   const n = Number(String(input).replace(',','.'));
   return Number.isFinite(n)&&n>=0&&n<=99999 ? Math.round(n*100) : null;
@@ -48,6 +50,7 @@ function init(){
   loadAllPictures();
   if('serviceWorker' in navigator && location.protocol!=='file:')navigator.serviceWorker.register('service-worker.js').catch(()=>{});
   window.addEventListener('resize',scheduleFitPay);
+  window.addEventListener('resize',scheduleFitShop);
   window.visualViewport?.addEventListener('resize',scheduleFitPay);
 }
 function bindTopButtons(){
@@ -67,10 +70,16 @@ function saveSettings(){try{localStorage.setItem(settingsKey,JSON.stringify(sett
 function loadProducts(){
   try{
     const saved=JSON.parse(localStorage.getItem(productsKey)||'null');
+    // Bestehende globale Größenwahl der Vorgängerversion je Artikel übernehmen.
+    const previousSizes={klein:false,mittel:false,gross:false,...settings.sizes};
     if(Array.isArray(saved))products=saved.filter(p=>p&&typeof p.id==='string').map(p=>({
       id:p.id,name:String(p.name||'Artikel'),price:Number.isInteger(p.price)?p.price:100,
-      sizes:{klein:100,mittel:150,gross:200,...p.sizes}
+      sizes:{klein:100,mittel:150,gross:200,...p.sizes},
+      enabledSizes:{klein:false,mittel:false,gross:false,...(p.enabledSizes||previousSizes)}
     }));
+    else products=defaultProducts.map(p=>({...p,sizes:{...p.sizes},enabledSizes:{...previousSizes}}));
+    // Migration lokal festhalten, damit neue Artikel nicht automatisch alle Größen übernehmen.
+    if(!Array.isArray(saved)||saved.some(p=>p&&!p.enabledSizes))localStorage.setItem(productsKey,JSON.stringify(products));
   }catch(e){}
 }
 function saveProducts(){
@@ -99,18 +108,62 @@ function pictureHtml(id){
   return url?`<img src="${url}" alt="">`:'<span class="productPlaceholder" aria-hidden="true">🎁</span>';
 }
 function productCard(product){
-  const sizes=Object.keys(sizeNames).filter(s=>settings.sizes[s]);
-  const base=sizes.length?'':`<button class="baseBuy" data-product="${esc(product.id)}" data-size="" aria-label="${esc(product.name)}, ${fmt(priceOf(product,''))}">${fmt(priceOf(product,''))} <span aria-hidden="true">＋</span></button>`;
-  return `<article class="productCard productTile" data-tile-id="${esc(product.id)}" aria-label="${esc(product.name)}"><div class="productPhoto">${pictureHtml(product.id)}</div><span class="productName">${esc(product.name)}</span>${base}${sizes.length?`<div class="sizeChoices">${sizes.map(s=>`<button class="sizeBuy size-${s}" data-product="${esc(product.id)}" data-size="${s}" aria-label="${esc(product.name)} ${sizeNames[s]}, ${fmt(priceOf(product,s))}"><span>${sizeNames[s]}</span><strong>${fmt(priceOf(product,s))}</strong></button>`).join('')}</div>`:''}</article>`;
+  const sizes=activeSizes(product);
+  const base=sizes.length?'':`<button class="baseBuy" data-product="${esc(product.id)}" data-size="" aria-label="${esc(product.name)}, ${fmt(priceOf(product,''))}"><strong>${fmt(priceOf(product,''))}</strong></button>`;
+  return `<article class="productCard productTile" data-tile-id="${esc(product.id)}" aria-label="${esc(product.name)}"><div class="productPhoto">${pictureHtml(product.id)}</div><span class="productName">${esc(product.name)}</span><div class="purchaseArea">${base}${sizes.length?`<div class="sizeChoices">${sizes.map(s=>`<button class="sizeBuy size-${s}" data-product="${esc(product.id)}" data-size="${s}" aria-label="${esc(product.name)} ${sizeNames[s]}, ${fmt(priceOf(product,s))}"><span>${sizeNames[s]}</span><strong>${fmt(priceOf(product,s))}</strong></button>`).join('')}</div>`:''}</div></article>`;
 }
 function renderShop(){
   app.innerHTML=`<section class="screen"><div class="shopGrid christmasShop"><section class="panel productPanel"><div class="productHeader"><div><h1>🎄 Weihnachtskasse</h1>${state.practice?'<p class="practiceHint">Übung: Produkte liegen bereit. Kassiere diesen Einkauf.</p>':''}<p class="christmasSubtitle">❄️ Artikel antippen und kassieren ❄️</p></div><button class="ghost dark clearCartIcon" id="clearCartBtn" title="Einkauf löschen" aria-label="Einkauf löschen">🗑️</button></div><div class="productGrid">${products.length?products.map(productCard).join(''):'<p class="hint">Noch keine Artikel. Über ⚙️ können Artikel angelegt werden.</p>'}</div></section><aside class="panel cartPanel"><h2>Warenkorb</h2><div class="cartItems">${renderCartRows()}</div><div class="totalBox"><span>Summe</span><strong>${fmt(total())}</strong></div><div class="checkoutFooter"><button class="primary" id="checkoutBtn" ${state.cart.length?'':'disabled'}>💶 Zur Kasse</button></div></aside></div></section>`;
   app.querySelectorAll('[data-product]').forEach(button=>button.onclick=()=>addProduct(button.dataset.product,button.dataset.size||''));
-  app.querySelectorAll('[data-tile-id]').forEach(tile=>tile.onclick=event=>{if(!event.target.closest('button')&&!Object.values(settings.sizes).some(Boolean))addProduct(tile.dataset.tileId,'')});
+  app.querySelectorAll('[data-tile-id]').forEach(tile=>tile.onclick=event=>{const p=productById(tile.dataset.tileId);if(p&&!event.target.closest('button')&&!activeSizes(p).length)addProduct(p.id,'')});
   app.querySelectorAll('[data-minus]').forEach(button=>button.onclick=()=>removeOne(button.dataset.minus,button.dataset.size||''));
   app.querySelectorAll('[data-plus]').forEach(button=>button.onclick=()=>addProduct(button.dataset.plus,button.dataset.size||''));
   document.getElementById('checkoutBtn').onclick=()=>{if(!state.cart.length)return;state.paid=[];setScreen('pay')};
   document.getElementById('clearCartBtn').onclick=()=>{if(confirm('Warenkorb wirklich leeren?'))clearCart()};
+  scheduleFitShop();
+}
+// Produkte nutzen die volle verfügbare Artikelfläche: wenige Artikel ergeben große Kacheln.
+// Die Höhe berücksichtigt, wie viele Größenknöpfe ein Artikel tatsächlich hat.
+let shopFitFrame=0;
+function scheduleFitShop(){
+  cancelAnimationFrame(shopFitFrame);
+  if(state.screen==='shop')shopFitFrame=requestAnimationFrame(fitShopGrid);
+}
+function fitShopGrid(){
+  const grid=app.querySelector('.productGrid');
+  if(!grid||!products.length)return;
+  const width=grid.clientWidth-8,height=grid.clientHeight-8;
+  if(width<=0||height<=0)return;
+  const gap=window.innerWidth<=700?8:12;
+  const minimumWidth=window.innerWidth<=700?126:158;
+  const baseMinHeight=window.innerHeight<620&&window.innerWidth<=700?158:200;
+  // Ein gemeinsamer Preisbereich sorgt dafür, dass Preisfelder und Artikelnamen
+  // in allen Kacheln unabhängig von der Anzahl aktivierter Größen fluchten.
+  const maxChoices=Math.max(1,...products.map(p=>activeSizes(p).length));
+  const buttonHeight=window.innerHeight<620&&window.innerWidth<=700?43:48;
+  const buyHeight=buttonHeight*maxChoices+5*(maxChoices-1);
+  const minHeight=baseMinHeight+Math.max(0,maxChoices-1)*53;
+  const maxColumns=Math.min(products.length,Math.max(1,Math.floor((width+gap)/(minimumWidth+gap))));
+  let best=null;
+  for(let columns=1;columns<=maxColumns;columns++){
+    const rows=Math.ceil(products.length/columns);
+    const cellWidth=(width-gap*(columns-1))/columns;
+    const cellHeight=(height-gap*(rows-1))/rows;
+    const coverage=products.length/(rows*columns);
+    const neededHeight=rows*minHeight+gap*(rows-1);
+    const overflowPenalty=Math.max(0,(neededHeight-height)/Math.max(height,1));
+    const shapePenalty=Math.abs(Math.log(Math.max(.1,cellWidth/Math.max(cellHeight,minHeight))));
+    const score=10*coverage-8*overflowPenalty-.65*shapePenalty;
+    if(!best||score>best.score)best={columns,rows,score};
+  }
+  grid.style.setProperty('--shop-columns',String(best.columns));
+  grid.style.setProperty('--shop-rows',String(best.rows));
+  grid.style.setProperty('--shop-row-min',minHeight+'px');
+  grid.style.setProperty('--shop-buy-height',buyHeight+'px');
+  // Auch bei unterschiedlich langen Produktnamen dieselbe Namens-Zeile nutzen.
+  grid.style.removeProperty('--shop-name-height');
+  const labelHeight=Math.max(36,...[...grid.querySelectorAll('.productName')].map(el=>el.scrollHeight));
+  grid.style.setProperty('--shop-name-height',Math.ceil(labelHeight)+'px');
 }
 function renderCartRows(){
   if(!state.cart.length)return '<p class="hint">Noch keine Produkte im Warenkorb.</p>';
@@ -119,7 +172,7 @@ function renderCartRows(){
 function addProduct(id,size=''){
   const p=productById(id);if(!p)return;
   // Ist eine Größe aktiv, darf kein unsichtbarer Grundpreis gebucht werden.
-  if(size?!settings.sizes[size]:Object.values(settings.sizes).some(Boolean))return;
+  if(size?!activeSizes(p).includes(size):activeSizes(p).length>0)return;
   state.cart.push({productId:id,size,name:p.name+(size?' · '+sizeNames[size]:''),price:priceOf(p,size)});
   render();
 }
@@ -140,7 +193,7 @@ function priceOf(p,size=''){
   return raw;
 }
 function syncCartPrices(){
-  state.cart=state.cart.filter(item=>productById(item.productId)&&(item.size?settings.sizes[item.size]:!Object.values(settings.sizes).some(Boolean))).map(item=>{
+  state.cart=state.cart.filter(item=>{const p=productById(item.productId);return p&&(item.size?activeSizes(p).includes(item.size):!activeSizes(p).length)}).map(item=>{
     const p=productById(item.productId);
     return {...item,name:p.name+(item.size?' · '+sizeNames[item.size]:''),price:priceOf(p,item.size)};
   });
@@ -219,7 +272,7 @@ function renderChange(){const change=paidTotal()-total();app.innerHTML=`<section
 app.querySelectorAll('[data-split]').forEach(b=>b.onclick=()=>splitChange(Number(b.dataset.split)));document.getElementById('repeatChangeBtn').onclick=()=>speak(`Ihr Wechselgeld beträgt ${fmtSpeak(change)}.`);document.getElementById('backPayBtn').onclick=()=>setScreen('pay');document.getElementById('finishBtn').onclick=finishSale;}
 function splitChange(i){const v=state.change[i];if(!splitMap[v])return;speak(`${moneyLabel(v)} wird kleiner gewechselt.`);state.change.splice(i,1,...splitMap[v]);render();}
 function finishSale(){state.sales.push({customer:state.practice?'Übung':state.customer,total:total(),paid:paidTotal(),change:paidTotal()-total(),items:groups().map(g=>`${g.count}× ${g.name}`).join(', '),time:new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})});setScreen('done');}
-function renderDone(){app.innerHTML=`<section class="doneScreen"><div class="doneCard"><div class="stars">⭐⭐⭐</div><h1>${state.practice?'Übung geschafft!':'Gut gemacht!'}</h1><div class="actions"><button class="primary goodbyeBtn" id="nextCustomerBtn">👋 Auf Wiedersehen und einen schönen Tag</button></div></div></section>`;document.getElementById('nextCustomerBtn').onclick=()=>{speak('Auf Wiedersehen und einen schönen Tag.');state.practice=false;state.practiceTask=null;state.customer++;state.cart=[];state.paid=[];state.change=[];setScreen('shop')}}
+function renderDone(){app.innerHTML=`<section class="doneScreen"><div class="doneCard"><div class="stars">⭐⭐⭐</div><h1>${state.practice?'Übung geschafft!':'Gut gemacht!'}</h1><div class="actions goodbyeActions"><button class="listenMini" id="listenGoodbyeBtn" aria-label="Abschiedsgruß anhören" title="Abschiedsgruß anhören">🔊</button><button class="primary goodbyeBtn" id="nextCustomerBtn">👋 Auf Wiedersehen und einen schönen Tag</button></div></div></section>`;document.getElementById('listenGoodbyeBtn').onclick=()=>speak('Auf Wiedersehen und einen schönen Tag.');document.getElementById('nextCustomerBtn').onclick=()=>{state.practice=false;state.practiceTask=null;state.customer++;state.cart=[];state.paid=[];state.change=[];setScreen('shop')}}
 function openReport(){const sum=state.sales.reduce((s,x)=>s+x.total,0);document.getElementById('reportContent').innerHTML=state.sales.length?`<p><strong>${state.sales.length}</strong> Verkäufe · Tageswert <strong>${fmt(sum)}</strong></p><table class="reportTable"><thead><tr><th>Kunde</th><th>Zeit</th><th>Summe</th><th>Gegeben</th><th>Wechselgeld</th></tr></thead><tbody>${state.sales.map(s=>`<tr><td>${s.customer}</td><td>${s.time}</td><td>${fmt(s.total)}</td><td>${fmt(s.paid)}</td><td>${fmt(s.change)}</td></tr>`).join('')}</tbody></table>`:'<p>Noch keine Verkäufe.</p>';document.getElementById('reportDialog').showModal();}
 function downloadCsv(){const rows=[['Kunde','Zeit','Artikel','Summe','Gegeben','Wechselgeld'],...state.sales.map(s=>[s.customer,s.time,s.items,fmt(s.total),fmt(s.paid),fmt(s.change)])];const csv=rows.map(r=>r.map(x=>`"${String(x).replaceAll('"','""')}"`).join(';')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='lernkasse-protokoll.csv';a.click();}
 function downloadPdf(){const sum=state.sales.reduce((s,x)=>s+x.total,0);const rows=state.sales.map(s=>`<tr><td>${esc(s.customer)}</td><td>${esc(s.time)}</td><td>${esc(s.items)}</td><td>${fmt(s.total)}</td><td>${fmt(s.paid)}</td><td>${fmt(s.change)}</td></tr>`).join('');const html=`<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Lernkasse Protokoll</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{margin:0 0 8px}p{font-size:14px}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:12px}th,td{border:1px solid #999;padding:7px;text-align:left;vertical-align:top}th{background:#eee}.toolbar{margin-bottom:16px}.btn{border:0;border-radius:10px;background:#2e7d32;color:white;padding:12px 16px;font-weight:bold;cursor:pointer}@media print{.toolbar{display:none}body{margin:14mm}}</style></head><body><div class="toolbar"><button class="btn" onclick="window.print()">PDF speichern / drucken</button></div><h1>Verkaufsprotokoll Lernkasse</h1><p>Datum: ${new Date().toLocaleDateString('de-DE')} · Verkäufe: ${state.sales.length} · Tageswert: ${fmt(sum)}</p>${state.sales.length?`<table><thead><tr><th>Kunde</th><th>Zeit</th><th>Artikel</th><th>Summe</th><th>Gegeben</th><th>Wechselgeld</th></tr></thead><tbody>${rows}</tbody></table>`:'<p>Noch keine Verkäufe.</p>'}<script>setTimeout(()=>window.print(),300)<\/script></body></html>`;const w=window.open('','_blank');if(!w){alert('Bitte Pop-ups erlauben, um das Protokoll als PDF zu speichern.');return;}w.document.write(html);w.document.close();}
@@ -228,15 +281,19 @@ function downloadPdf(){const sum=state.sales.reduce((s,x)=>s+x.total,0);const ro
 function renderTeacherContent(){
   const content=document.getElementById('teacherContent');
   content.innerHTML=`<div class="teacherGrid"><label><input type="checkbox" id="setSpeech" ${settings.speech?'checked':''}> Sprache über Vorlese-Tasten</label><label><input type="checkbox" id="setContrast" ${settings.highContrast?'checked':''}> Hoher Kontrast</label><label>Schwierigkeit <select id="setDifficulty"><option value="leicht" ${settings.difficulty==='leicht'?'selected':''}>leicht</option><option value="normal" ${settings.difficulty==='normal'?'selected':''}>normal</option><option value="schwer" ${settings.difficulty==='schwer'?'selected':''}>schwer</option></select></label><label>Preise <select id="setPriceMode"><option value="original" ${settings.priceMode==='original'?'selected':''}>Eingestellte Preise</option><option value="full" ${settings.priceMode==='full'?'selected':''}>nur volle Euro</option><option value="half" ${settings.priceMode==='half'?'selected':''}>50-Cent-Schritte</option><option value="ten" ${settings.priceMode==='ten'?'selected':''}>10-Cent-Schritte</option></select></label></div>
-  <section class="teacherSection"><h3>🎁 Größenvarianten</h3><p class="hint">Einzeln aktivieren. Sobald eine Größe eingeschaltet ist, erscheint in der Artikelauswahl nur deren farbiger Größenpreis statt des dunkelgrünen Grundpreises.</p><div class="sizeSettings">${Object.keys(sizeNames).map(s=>`<label class="sizeToggle size-${s}"><input type="checkbox" data-toggle-size="${s}" ${settings.sizes[s]?'checked':''}> ${sizeNames[s]}</label>`).join('')}</div></section>
-  <section class="teacherSection"><div class="teacherSectionHeading"><h3>🛍️ Artikel bearbeiten</h3><button type="button" class="secondary addArticleButton" id="addArticleBtn">＋ Artikel hinzufügen</button></div><p class="hint">Die Grundeinstellung enthält zwei Artikel. Namen, Bilder und Preise lassen sich direkt hier ändern. Änderungen werden automatisch lokal gespeichert.</p><div class="articleEditors">${products.map((p,i)=>`<div class="articleEditor" data-edit-id="${esc(p.id)}"><div class="editorPhoto">${pictureHtml(p.id)}</div><div class="editorFields"><label>Artikelname<input type="text" maxlength="80" data-edit-name="${esc(p.id)}" value="${esc(p.name)}" placeholder="Artikelname"></label><label>Grundpreis (€)<input type="text" inputmode="decimal" data-edit-price="${esc(p.id)}" value="${decimalPrice(p.price)}"></label><div class="editorSizePrices">${Object.keys(sizeNames).map(s=>`<label class="size-${s}">${sizeNames[s]} (€)<input type="text" inputmode="decimal" data-edit-size="${s}" data-edit-id="${esc(p.id)}" value="${decimalPrice(p.sizes[s])}" ${settings.sizes[s]?'':'disabled'}></label>`).join('')}</div><label class="imageUploadLabel">📷 Bild hochladen / ersetzen<input type="file" accept="image/*" data-image-upload="${esc(p.id)}"></label><div class="editorActions"><button type="button" class="ghost dark" data-remove-image="${esc(p.id)}" ${pictureUrls.has(p.id)?'':'disabled'}>Bild entfernen</button><button type="button" class="danger" data-remove-article="${esc(p.id)}">Artikel löschen</button></div></div></div>`).join('')}</div></section>
+  <section class="teacherSection"><div class="teacherSectionHeading"><h3>🛍️ Artikel bearbeiten</h3><button type="button" class="secondary addArticleButton" id="addArticleBtn">＋ Artikel hinzufügen</button></div><p class="hint">Jeder Artikel hat seine eigenen Größen. Ohne gewählte Größe erscheint sein dunkelgrüner Grundpreis, mit Größen nur die jeweils aktivierten farbigen Preise. Alle Änderungen werden lokal gespeichert.</p><div class="articleEditors">${products.map(p=>`<div class="articleEditor" data-edit-id="${esc(p.id)}"><div class="editorPhoto">${pictureHtml(p.id)}</div><div class="editorFields"><label>Artikelname<input type="text" maxlength="80" data-edit-name="${esc(p.id)}" value="${esc(p.name)}" placeholder="Artikelname"></label><label>Grundpreis (€) – ohne Größen<input type="text" inputmode="decimal" data-edit-price="${esc(p.id)}" value="${decimalPrice(p.price)}"></label><div class="editorVariants"><span class="editorVariantsTitle">Größen nur für diesen Artikel aktivieren:</span><div class="sizeSettings">${Object.keys(sizeNames).map(s=>`<label class="sizeToggle size-${s}"><input type="checkbox" data-toggle-size="${s}" data-edit-id="${esc(p.id)}" ${p.enabledSizes?.[s]?'checked':''}> ${sizeNames[s]}</label>`).join('')}</div></div><div class="editorSizePrices">${Object.keys(sizeNames).map(s=>`<label class="size-${s}">${sizeNames[s]} (€)<input type="text" inputmode="decimal" data-edit-size="${s}" data-edit-id="${esc(p.id)}" value="${decimalPrice(p.sizes[s])}" ${p.enabledSizes?.[s]?'':'disabled'}></label>`).join('')}</div><label class="imageUploadLabel">📷 Bild hochladen / ersetzen<input type="file" accept="image/*" data-image-upload="${esc(p.id)}"></label><div class="editorActions"><button type="button" class="ghost dark" data-remove-image="${esc(p.id)}" ${pictureUrls.has(p.id)?'':'disabled'}>Bild entfernen</button><button type="button" class="danger" data-remove-article="${esc(p.id)}">Artikel löschen</button></div></div></div>`).join('')}</div></section>
   <div class="actions teacherBottomActions"><button class="secondary" id="teacherPracticeBtn">Übung starten</button><button class="danger" id="clearDayBtn">Protokoll löschen</button></div>`;
   content.querySelector('#setSpeech').onchange=e=>{settings.speech=e.target.checked;saveSettings()};
   content.querySelector('#setContrast').onchange=e=>{settings.highContrast=e.target.checked;saveSettings()};
   content.querySelector('#setDifficulty').onchange=e=>{settings.difficulty=e.target.value;saveSettings()};
   content.querySelector('#setPriceMode').onchange=e=>{settings.priceMode=e.target.value;saveSettings();syncCartPrices()};
   content.querySelectorAll('[data-toggle-size]').forEach(el=>el.onchange=e=>{
-    settings.sizes[el.dataset.toggleSize]=e.target.checked;saveSettings();syncCartPrices();renderTeacherContent();
+    const p=productById(el.dataset.editId);if(!p)return;
+    p.enabledSizes[el.dataset.toggleSize]=e.target.checked;
+    if(!saveProducts()){p.enabledSizes[el.dataset.toggleSize]=!e.target.checked;e.target.checked=!e.target.checked;return;}
+    const priceInput=el.closest('.articleEditor').querySelector(`[data-edit-size="${el.dataset.toggleSize}"]`);
+    if(priceInput)priceInput.disabled=!e.target.checked;
+    syncCartPrices();
   });
   content.querySelectorAll('[data-edit-name]').forEach(el=>el.onchange=e=>{
     const p=productById(el.dataset.editName);if(!p)return;
@@ -268,7 +325,7 @@ function renderTeacherContent(){
   });
   content.querySelector('#addArticleBtn').onclick=()=>{
     const id='artikel-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
-    products.push({id,name:`Artikel ${products.length+1}`,price:100,sizes:{klein:100,mittel:150,gross:200}});
+    products.push({id,name:`Artikel ${products.length+1}`,price:100,sizes:{klein:100,mittel:150,gross:200},enabledSizes:{klein:false,mittel:false,gross:false}});
     saveProducts();renderTeacherContent();if(state.screen==='shop')render();
     const field=content.querySelector(`[data-edit-name="${id}"]`);field?.focus();field?.scrollIntoView({block:'nearest'});
   };
@@ -288,11 +345,11 @@ function normalMode(){state.practice=false;state.practiceTask=null;state.cart=[]
 function startPractice(){
   if(!products.length){alert('Bitte zuerst in den Einstellungen Artikel anlegen.');return}
   state.practice=true;state.cart=[];state.paid=[];state.change=[];
-  const activeSizes=Object.keys(sizeNames).filter(size=>settings.sizes[size]);
-  const sizeOptions=activeSizes.length?activeSizes:[''];
   const count=settings.difficulty==='leicht'?2:settings.difficulty==='schwer'?5:3;
   for(let i=0;i<count;i++){
     const p=products[Math.floor(Math.random()*products.length)];
+    const available=activeSizes(p);
+    const sizeOptions=available.length?available:[''];
     const size=sizeOptions[Math.floor(Math.random()*sizeOptions.length)];
     const item={productId:p.id,size,name:p.name+(size?' · '+sizeNames[size]:''),price:priceOf(p,size)};
     state.cart.push(item);
