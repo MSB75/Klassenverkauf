@@ -16,8 +16,8 @@ body:not(.contrastMode){background:#fff6f3!important}
 .productPhoto{height:104px;width:100%;display:grid;place-items:center}
 .productPhoto img{width:100%!important;height:104px!important;max-width:150px;object-fit:contain;border-radius:12px}
 .productPlaceholder{width:95px;height:95px;display:grid;place-items:center;font-size:4rem;background:linear-gradient(150deg,#fff1eb,#f4f9ed);border-radius:18px}
-.baseBuy{min-height:48px;width:100%;border:0;border-radius:12px;background:#0d6a3b;color:#fff;font-size:1.05rem;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:space-around}
-.baseBuy span{font-size:1.5rem}
+.baseBuy{min-height:48px;width:100%;border:0;border-radius:12px;background:#0d6a3b;color:#fff;font-size:1.18rem;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px 10px}
+.baseBuy strong{font-size:1.18em;line-height:1.1}
 .sizeChoices{display:grid;grid-template-columns:1fr;gap:5px;width:100%}
 .sizeBuy{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:5px;border:2px solid transparent;border-radius:10px;font-weight:900;padding:7px 8px;color:#183024;cursor:pointer}
 .size-klein{background:#bde9cf!important;border-color:#65ae82!important;color:#15452a!important}
@@ -144,3 +144,84 @@ body.isPay .moneyBtn{width:100%!important;min-width:0!important}
 /* Höhe richtet sich an tatsächlich verfügbarem Platz aus, nicht an historischen 76px-Menüregeln. */
 body.isPay #app{height:auto!important;min-height:0!important;flex:1 1 0!important;overflow:hidden!important}
 #app .productTile{cursor:pointer}
+
+/* Individuelle Größenwahl je Artikel */
+.editorVariants{display:grid;gap:7px;padding:9px 0;border-top:1px solid #e9dfd4}
+.editorVariantsTitle{font-size:.93rem;font-weight:800;color:#425849}
+.editorVariants .sizeToggle{padding:8px 11px;font-size:.89rem}
+.editorVariants .sizeToggle input{width:20px;height:20px}
+
+/* Automatisch flächenfüllendes Produktraster, abhängig von Artikelanzahl und Platz. */
+#app .productGrid{
+ flex:1 1 0;min-height:0;min-width:0;overflow:auto;
+ grid-template-columns:repeat(var(--shop-columns,2),minmax(0,1fr))!important;
+ grid-template-rows:repeat(var(--shop-rows,1),minmax(var(--shop-row-min,200px),1fr));
+ grid-auto-rows:minmax(var(--shop-row-min,200px),1fr);
+ align-content:stretch;align-items:stretch;gap:12px;
+}
+#app .productTile{
+ height:100%;min-height:var(--shop-row-min,200px);
+ min-width:0;justify-content:space-between;
+}
+#app .productTile .productPhoto{
+ height:auto;width:100%;min-height:64px;flex:1 1 0;
+ min-width:0;overflow:hidden;
+}
+#app .productTile .productPhoto img{
+ width:100%!important;height:100%!important;max-width:100%!important;
+ max-height:100%!important;object-fit:contain;
+}
+#app .productTile .productPlaceholder{
+ width:min(100%,170px);height:min(100%,170px);
+ font-size:clamp(3rem,6vw,6rem);
+}
+#app .productTile .productName{flex:0 0 auto;overflow-wrap:anywhere}
+#app .productTile .baseBuy,#app .productTile .sizeChoices{flex:0 0 auto}
+@media(max-width:700px){
+ #app .productGrid{gap:8px}
+ #app .productTile{padding:8px;gap:6px}
+ #app .productTile .productName{font-size:clamp(.82rem,3.5vw,1.1rem)}
+ #app .productTile .baseBuy{font-size:clamp(.82rem,3.2vw,1.1rem)}
+ #app .productTile .baseBuy strong{font-size:1.2em}
+ #app .productTile .sizeBuy{padding:6px 5px;font-size:clamp(.7rem,3vw,.95rem)}
+ #app .productTile .sizeBuy strong{font-size:clamp(.72rem,2.8vw,.93rem)}
+ .editorVariants .sizeSettings{gap:6px}
+}
+
+@media(max-width:700px) and (max-height:620px){
+ #app .productTile .productPhoto{min-height:43px}
+ #app .productTile .productName{min-height:1.8em}
+ #app .productTile .baseBuy{min-height:43px}
+ #app .productTile .sizeBuy{min-height:43px}
+}
+
+/* Einheitliche Produktkarten: Bild, Artikelname und Kaufbereich bilden drei feste Zeilen.
+   Ein einzelner Grundpreis füllt genau denselben Platz wie 1-3 Größenschaltflächen. */
+#app .productTile{
+ display:grid!important;
+ grid-template-rows:minmax(43px,1fr) var(--shop-name-height,2.3em) var(--shop-buy-height,48px);
+ align-items:stretch;
+ justify-content:stretch;
+}
+#app .productTile .productPhoto{
+ height:100%;min-height:0;align-self:stretch;
+}
+#app .productTile .productName{
+ height:100%;min-height:0;line-height:1.2;align-self:stretch;align-content:start;text-align:center;
+}
+#app .productTile .purchaseArea{
+ display:grid;grid-template-columns:minmax(0,1fr);width:100%;height:100%;min-width:0;min-height:0;
+}
+#app .productTile .purchaseArea>.baseBuy,
+#app .productTile .purchaseArea>.sizeChoices{
+ width:100%;height:100%;min-height:0;min-width:0;
+}
+#app .productTile .purchaseArea>.sizeChoices{
+ grid-auto-rows:minmax(0,1fr);align-content:stretch;
+}
+#app .goodbyeActions{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+#app .goodbyeActions #listenGoodbyeBtn{position:static;flex:0 0 auto}
+@media(max-width:700px){
+ #app .productTile{grid-template-rows:minmax(43px,1fr) var(--shop-name-height,2.3em) var(--shop-buy-height,48px)}
+ #app .goodbyeActions .goodbyeBtn{max-width:100%;white-space:normal}
+}
