@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weihnachtskasse – Lernkasse</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Weihnachtskasse">
+  <meta name="theme-color" content="#a90c21">
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    html,body{height:100%;height:100dvh;overflow:hidden}
+    body{display:flex;flex-direction:column;margin:0}
+    .topbar{flex:0 0 auto}
+    #app{flex:1 1 auto;min-height:0;transform-origin:top center}
+    @media (max-width:760px){
+        }
+
+    /* Weihnachtliches Menü der eigenständigen Weihnachtskasse */
+    :root{color-scheme:light;--blue:#175cba;--blue-dark:#103d83;--blue-light:#e9f2ff;--line:#d8e5f5;--ink:#19324e;--muted:#607c99}
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;background:#edf4fc;color:var(--ink)}
+    .topbar{background:linear-gradient(105deg,#103f86,#2574d4)!important;color:white!important;box-shadow:0 2px 10px #183d781c;padding:12px 20px}
+    .topbar strong{color:#fff}.topbar .versionBadge{background:#ffffff30;color:white}
+    .topbar .ghost{background:#ffffff20!important;color:white!important;border:1px solid #ffffff88!important;border-radius:12px}
+    #app{padding:12px;gap:12px;background:#edf4fc;color:var(--ink)}
+    #app .catPanel,#app .productPanel,#app .cartPanel,#app .basketPanel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 2px 10px #1d4e7d15;min-width:0}
+    #app .cartPanel,#app .basketPanel{background:#f8fbff}
+    #app .productHeader h1,#app .cartPanel h1,#app .cartPanel h2{color:var(--blue-dark)}
+    #app .productGrid{gap:10px}
+    #app [data-product]{background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:0 2px 6px #17426d10}
+    #app [data-product]:hover{border-color:#77acec;box-shadow:0 4px 12px #17426d24}
+    .clearCartButton{display:block;width:100%;padding:11px 12px;margin:8px 0;border-radius:12px;border:1px solid #bed8f6;background:#dceafe;color:var(--blue-dark);font-size:1rem;font-weight:700;cursor:pointer}
+    .clearCartButton:hover{background:#c4dfff}
+    @media(max-width:760px){#app{padding:7px;gap:7px}}
+  </style>
+  <link rel="stylesheet" href="css/christmas.css">
+
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <strong>🎄 Weihnachtskasse</strong><small class="versionBadge">Sonderedition</small>
+      <span id="customerBadge">Kunde 1</span>
+    </div>
+    <div class="topActions">
+      <button id="practiceBtn" class="ghost practiceTop" title="Übungsmodus" aria-label="Übungsmodus starten">🎲 Üben</button>
+      <button id="teacherBtn" class="ghost iconOnly" title="Lehrkraft" aria-label="Lehrkraft">⚙️</button>
+      <button id="helpBtn" class="ghost iconOnly" title="Hilfe" aria-label="Hilfe">?</button>
+      <button id="infoBtn" class="ghost iconOnly" title="Info" aria-label="Info">i</button>
+      <button id="reportBtn" class="ghost iconOnly" title="Protokoll" aria-label="Protokoll">📄</button>
+    </div>
+  </header>
+
+  <main id="app" class="app" aria-live="polite"></main>
+
+  <dialog id="helpDialog" class="dialog">
+    <h2>Hilfe</h2>
+    <ol>
+      <li>Artikel antippen oder über „Üben“ einen Zufallseinkauf starten. Artikel und Bilder werden in ⚙️ Einstellungen bearbeitet.</li>
+      <li>Auf „Zur Kasse“ tippen.</li>
+      <li>Scheine und Münzen antippen.</li>
+      <li>Auf „Wechselgeld zeigen“ tippen.</li>
+      <li>Wechselgeld herausgeben.</li>
+    </ol>
+    <button class="primary" onclick="closeDialog('helpDialog')">Schließen</button>
+  </dialog>
+
+  <dialog id="reportDialog" class="dialog wide">
+    <h2>Verkaufsprotokoll</h2>
+    <div id="reportContent"></div>
+    <div class="dialogActions">
+      <button class="secondary csvBtn" id="downloadCsvBtn">CSV speichern</button>
+      <button class="secondary pdfBtn" id="downloadPdfBtn">PDF speichern</button>
+      <button class="primary" onclick="closeDialog('reportDialog')">Schließen</button>
+    </div>
+  </dialog>
+
+  <dialog id="teacherDialog" class="dialog wide">
+    <h2>🎄 Einstellungen · Weihnachtskasse</h2>
+    <div id="teacherContent"></div>
+    <div class="dialogActions">
+      <button class="primary" onclick="closeDialog('teacherDialog')">Schließen</button>
+    </div>
+  </dialog>
+
+
+  <dialog id="infoDialog" class="dialog wide infoDialog">
+    <h2>🔒 Datenschutz &amp; Impressum</h2>
+    <div class="infoSections">
+      <section class="infoSection">
+        <h3>🗄️ Datenspeicherung</h3>
+        <p>Diese App speichert keine persönlichen Daten. Es werden keine Namen, Standorte, Nutzungsverhalten oder sonstige Informationen gespeichert oder übertragen.</p>
+        <p>Die App läuft im Browser des Geräts. Artikel, Preise und hochgeladene Produktbilder werden nur auf diesem Gerät im Browser gespeichert (lokaler Speicher und IndexedDB). Nach dem ersten vollständigen Laden ist die Kasse offline nutzbar.</p>
+      </section>
+      <section class="infoSection">
+        <h3>☁️ Hosting &amp; Server</h3>
+        <p>Die App wird über GitHub Pages (GitHub Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA) bereitgestellt. Beim ersten Abruf der App-Seite speichert GitHub automatisch Server-Logs mit IP-Adresse, Zeitstempel und Browser-Typ. Diese Logs werden von GitHub verwaltet und sind nicht durch den Betreiber dieser App einsehbar oder beeinflussbar. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb).</p>
+        <p><strong>Offline-Nutzung:</strong> Nach dem ersten Aufruf speichert der Browser die App lokal (Service Worker / Cache). Danach werden keinerlei Serverzugriffe mehr durchgeführt — auch keine Logs.</p>
+        <p>Datenschutzerklärung von GitHub: <a href="https://docs.github.com/privacy" target="_blank" rel="noopener">docs.github.com/privacy</a></p>
+      </section>
+      <section class="infoSection">
+        <h3>🖼️ Bildmaterial &amp; Urheberrecht</h3>
+        <p>Produktbilder werden von der nutzenden Person selbst ausgewählt und auf dem Gerät gespeichert. Die Kasse bringt keine Lebensmittelbilder mit.</p>
+        <p>Die verwendeten Geldabbildungen stammen von <strong>Pictosearch</strong>.</p>
+        </section>
+      <section class="infoSection">
+        <h3>📞 Kontakt</h3>
+        <p>Bei Fragen oder Anmerkungen erreichst du den App-Entwickler per E-Mail:<br><a href="mailto:matthias.scheibelhut-beck@hephata-schulnetz.de">matthias.scheibelhut-beck@hephata-schulnetz.de</a></p>
+      </section>
+    </div>
+    <div class="dialogActions">
+      <button class="primary" onclick="closeDialog('infoDialog')">Schließen</button>
+    </div>
+  </dialog>
+
+  <script src="js/app.js" defer></script>
+  <script>
+    // Zugangsschutz für Einstellungen: Ziffern 7, 2, 9, 1, 5, 4 müssen aufsteigend eingegeben werden.
+    document.addEventListener('DOMContentLoaded', () => {
+      const teacherBtn = document.getElementById('teacherBtn');
+      if (!teacherBtn) return;
+
+      const settingsDigits = ['7', '2', '9', '1', '5', '4'];
+      const settingsCode = [...settingsDigits].sort().join('');
+      teacherBtn.addEventListener('click', (event) => {
+        const entered = window.prompt(
+          `Einstellungen geschützt. Code eingeben: ${settingsDigits.join('  ')}`
+        );
+
+        if (entered === settingsCode) return;
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (entered !== null) window.alert('Code nicht korrekt. Einstellungen bleiben gesperrt.');
+      }, true);
+    });
+  </script>
+
+  <script>
+    // Zusätzliche Warenkorb-Aktion, ohne in den Bezahlablauf einzugreifen.
+    document.addEventListener('DOMContentLoaded', () => {
+      const app = document.getElementById('app');
+      const observer = new MutationObserver(() => {
+        const panel = app.querySelector('.cartPanel, .basketPanel, .cart-panel, [class*="cartPanel"], [class*="basketPanel"]');
+        if (!panel || panel.querySelector('#emptyCartBtn')) return;
+        const btn = document.createElement('button');
+        btn.id = 'emptyCartBtn';
+        btn.type = 'button';
+        btn.className = 'clearCartButton';
+        btn.textContent = '🗑 Warenkorb leeren';
+        btn.addEventListener('click', () => {
+          if (!confirm('Warenkorb wirklich leeren?')) return;
+          if (typeof window.clearCart === 'function') window.clearCart();
+        });
+        const heading = panel.querySelector('h1,h2,h3,.cartHeader,.basketHeader');
+        if (heading) heading.insertAdjacentElement('afterend', btn);
+        else panel.prepend(btn);
+      });
+      observer.observe(app, {childList:true,subtree:true});
+    });
+  </script>
+
+
+
+</body>
+</html>
